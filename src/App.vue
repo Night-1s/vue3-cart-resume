@@ -73,10 +73,6 @@ const totalPrice = computed(() => {
   }, 0)
 })
 
-
-
-
-
 //封装localStorage 操作
 const storage = {
   //存
