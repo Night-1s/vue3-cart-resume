@@ -51,11 +51,12 @@ const decrease = (id) => {
   const product = products.value.find(p => p.id === id)
   if (product && product.count > 1) {
     product.count--
-  } else if (product && product.count === 1) {
-    if (confirm('删除这个商品？')) {
-      removeProduct(id)
-    }
   }
+}
+// 单个商品删除
+const removeProduct = (id) => {
+  products.value = products.value.filter(p => p.id !== id)
+  console.log('删除后剩余商品：', products.value) // 调试用
 }
 
 // 清空购物车
@@ -64,6 +65,7 @@ const clearCart = () => {
     products.value = []
   }
 }
+
 // 计算总价
 const totalPrice = computed(() => {
   return products.value.reduce((sum, product) => {
@@ -116,14 +118,13 @@ const storage = {
     <ul v-else>
       <li v-for="product in products" :key="product.id" class="cart-item">
         <div class="product-info">
-          <!-- 修改这里：移除了商品名和价格之间的"-" -->
           <span class="product-name">{{ product.name }}</span>
           <span class="product-price">¥{{ product.price }}</span>
         </div>
 
         <div class="quantity-control">
           <button @click="decrease(product.id)" :disabled="product.count <= 1" class="btn-decrease" title="减少数量">
-            −
+            -
           </button>
 
           <span class="quantity">数量：{{ product.count }}</span>
