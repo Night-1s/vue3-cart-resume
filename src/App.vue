@@ -22,6 +22,25 @@ onMounted(() => {
   }
 })
 
+//编辑相关
+const editIndex = ref(-1)//-1表示没有正在编辑的任何项
+const editName = ref('')//编辑时临时存入输入的内容
+
+// 开始编辑
+const editItem = (index, name) => {
+  editIndex.value = index
+  editName.value = name
+}
+
+// 保存编辑
+const saveEdit = (id) => {
+  if (!editName.value.trim()) return//如果输入为空，则不保存
+  const product = products.value.find(p => p.id === id)
+  product.name = editName.value.trim()//更新商品名称
+  editIndex.value = -1//退出编辑状态
+
+
+}
 // 监听变化，自动保存
 watch(products, (newValue) => {
   localStorage.setItem('vue3-cart', JSON.stringify(newValue))
@@ -114,7 +133,14 @@ const storage = {
     <ul v-else>
       <li v-for="product in products" :key="product.id" class="cart-item">
         <div class="product-info">
-          <span class="product-name">{{ product.name }}</span>
+          <span v-if="editIndex === product.id" class="edit-section">
+            <input v-model="editName" @keyup.enter="saveEdit(product.id)" @blur="saveEdit(product.id)"
+              class="edit-input" />
+            <button @click="saveEdit(product.id)">保存</button>
+          </span>
+          <span v-else @click="editItem(product.id, product.name)" class="product-name">
+            {{ product.name }}
+          </span>
           <span class="product-price">¥{{ product.price }}</span>
         </div>
 
@@ -207,6 +233,16 @@ header h1 {
   padding: 40px;
   color: #999;
   font-size: 18px;
+}
+
+.product-name {
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.edit-section input:hover {
+  cursor: pointer;
 }
 
 .cart-item {
