@@ -9,18 +9,41 @@ const newProductName = ref('')
 // 初始化数据
 onMounted(() => {
   const saved = localStorage.getItem('vue3-cart')
+  // 如果有保存的数据，就加载，否则使用模拟数据
   if (saved) {
     products.value = JSON.parse(saved)
-  } else {
+  }
+  // 模拟初始数据
+  else {
     products.value = [
-      { id: 1, name: '商品A', price: 10, count: 1, selected: false },
-      { id: 2, name: '商品B', price: 15, count: 2, selected: false },
-      { id: 3, name: '商品C', price: 20, count: 1, selected: false },
-      { id: 4, name: '商品D', price: 25, count: 1, selected: false }
+      { id: 1, name: '商品A', price: 10, count: 1, selected: false, stock: 8 },
+      { id: 2, name: '商品B', price: 15, count: 2, selected: false, stock: 3 },
+      { id: 3, name: '商品C', price: 20, count: 1, selected: false, stock: 2 },
+      { id: 4, name: '商品D', price: 25, count: 1, selected: false, stock: 5 }
 
     ]
   }
 })
+//模拟购物车库存减少
+onMounted(() => {
+  //每隔10秒随机减少一个商品的库存，模拟库存变化
+  setInterval(() => {
+    // 随机选择一个商品
+    const randomProduct = products.value[Math.floor(Math.random() * products.value.length)]
+    if (randomProduct.stock > 0) {
+      randomProduct.stock-- // 模拟库存减少
+    }
+  }, 10000) // 每10秒更新一次库存
+})
+
+//监听库存变化，为0时删除购买数量
+watch(products, (newValue) => {
+  newValue.forEach(product => {
+    if (product.stock === 0) {
+      product.count = 0 // 库存为0时，购买数量也设为0
+    }
+  })
+}, { deep: true })
 
 //编辑相关
 const editIndex = ref(-1)//-1表示没有正在编辑的任何项
@@ -38,8 +61,6 @@ const saveEdit = (id) => {
   const product = products.value.find(p => p.id === id)
   product.name = editName.value.trim()//更新商品名称
   editIndex.value = -1//退出编辑状态
-
-
 }
 // 监听变化，自动保存
 watch(products, (newValue) => {
@@ -53,7 +74,8 @@ const addProduct = () => {
       id: Date.now(),//简单生成唯一ID
       name: newProductName.value,
       price: Math.floor(Math.random() * 100) + 10,// 随机价格 10-110
-      count: 1
+      count: 1,
+      stock: Math.floor(Math.random() * 10) + 1 // 库存 1-10
     });
     newProductName.value = '';//清空输入框
   }
@@ -62,7 +84,10 @@ const addProduct = () => {
 // 增加数量
 const increase = (id) => {
   const product = products.value.find(p => p.id === id)
-  if (product) product.count++
+  if (product) {
+    product.count++
+  }
+
 }
 
 // 减少数量
@@ -159,16 +184,26 @@ const storage = {
             </span>
           </div>
           <span class="product-price">¥{{ product.price }}</span>
+          <!-- 库存信息显示 -->
+          <span class="text-sm product-stock" :class="{
+            'product-stock out': product.stock === 0,      // 售罄
+            'product-stock low': product.stock > 0 && product.stock <= 3, // 紧张
+            'product-stock normal': product.stock > 3      // 充足
+          }">
+            库存：{{ product.stock }}
+            <span v-if="product.stock === 0">(售罄)</span>
+            <span v-else-if="product.stock <= 3">(紧张)</span>
+            <span v-else>(充足)</span>
+          </span>
         </div>
 
         <div class="quantity-control">
-          <button @click="decrease(product.id)" :disabled="product.count <= 1" class="btn-decrease" title="减少数量">
+          <button @click="decrease(product.id)" :disabled="product.count <= 1" class="btn-decrease">
             -
           </button>
-
           <span class="quantity">数量：{{ product.count }}</span>
-
-          <button @click="increase(product.id)" class="btn-increase" title="增加数量">
+          <button @click="increase(product.id)" :disabled="product.count >= product.stock || product.stock === 0"
+            class="btn-increase" :title="product.stock === 0 ? '商品已售罄' : `最多可买${product.stock}件`">
             +
           </button>
 
@@ -260,6 +295,46 @@ header h1 {
   color: #333;
   flex: 1;
   cursor: pointer;
+}
+
+/* 库存样式 */
+.product-stock {
+  font-size: 12px;
+  color: #666;
+  margin-left: 8px;
+}
+
+/* 库存紧张样式 */
+.product-stock.low {
+  color: #e6a23c;
+  /* 橙色警告 */
+  font-weight: 500;
+}
+
+/* 库存充足样式 */
+.product-stock.normal {
+  color: #67c23a;
+  /* 绿色 */
+}
+
+/* 无库存样式 */
+.product-stock.out {
+  color: #f56c6c;
+  /* 红色 */
+  text-decoration: line-through;
+}
+
+.stock-tip {
+  font-size: 11px;
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* 禁用状态 */
+.btn-increase:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
 }
 
 .cart-item {
