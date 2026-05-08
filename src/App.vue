@@ -74,6 +74,7 @@ const decrease = (id) => {
 }
 // 单个商品删除
 const removeProduct = (id) => {
+  if (!confirm('确定要删除这个商品吗？')) return
   products.value = products.value.filter(p => p.id !== id)
   console.log('删除后剩余商品：', products.value) // 调试用
 }
