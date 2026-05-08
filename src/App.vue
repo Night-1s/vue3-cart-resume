@@ -13,10 +13,10 @@ onMounted(() => {
     products.value = JSON.parse(saved)
   } else {
     products.value = [
-      { id: 1, name: '商品A', price: 10, count: 1 },
-      { id: 2, name: '商品B', price: 15, count: 2 },
-      { id: 3, name: '商品C', price: 20, count: 1 },
-      { id: 4, name: '商品D', price: 25, count: 1 }
+      { id: 1, name: '商品A', price: 10, count: 1, selected: false },
+      { id: 2, name: '商品B', price: 15, count: 2, selected: false },
+      { id: 3, name: '商品C', price: 20, count: 1, selected: false },
+      { id: 4, name: '商品D', price: 25, count: 1, selected: false }
 
     ]
   }
@@ -78,6 +78,16 @@ const removeProduct = (id) => {
   console.log('删除后剩余商品：', products.value) // 调试用
 }
 
+//全选
+const isAllSelected = computed({
+  get() {
+    return products.value.length > 0 && products.value.every(p => p.selected)
+  },
+  set(value) {
+    products.value.forEach(p => p.selected = value)
+  }
+})
+
 // 清空购物车
 const clearCart = () => {
   if (confirm('确定清空购物车吗？')) {
@@ -131,16 +141,22 @@ const storage = {
 
     <!-- 商品列表 -->
     <ul v-else>
+      <div class="select-all">
+        <input type="checkbox" id="selectAll" v-model="isAllSelected" />
+        <label for="selectAll">全选</label>
+      </div>
       <li v-for="product in products" :key="product.id" class="cart-item">
         <div class="product-info">
-          <span v-if="editIndex === product.id" class="edit-section">
-            <input v-model="editName" @keyup.enter="saveEdit(product.id)" @blur="saveEdit(product.id)"
-              class="edit-input" />
-            <button @click="saveEdit(product.id)">保存</button>
-          </span>
-          <span v-else @click="editItem(product.id, product.name)" class="product-name">
-            {{ product.name }}
-          </span>
+          <input type="checkbox" v-model="product.selected" v-if="editIndex !== product.id" />
+          <div class="product-name">
+            <span v-if="editIndex === product.id">
+              <input v-model="editName" @keyup.enter="saveEdit(product.id)" @blur="saveEdit(product.id)" />
+              <button @click="saveEdit(product.id)">保存</button>
+            </span>
+            <span class="edit-section" v-else @click="editItem(product.id, product.name)">
+              {{ product.name }}
+            </span>
+          </div>
           <span class="product-price">¥{{ product.price }}</span>
         </div>
 
@@ -238,10 +254,10 @@ header h1 {
 .product-name {
   display: flex;
   gap: 8px;
-  cursor: pointer;
-}
-
-.edit-section input:hover {
+  font-weight: 500;
+  font-size: 16px;
+  color: #333;
+  flex: 1;
   cursor: pointer;
 }
 
@@ -253,15 +269,24 @@ header h1 {
   border-bottom: 1px solid #eee;
 }
 
+.select-all input[type="checkbox"] {
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
 .product-info {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
   gap: 4px;
 }
 
-.product-name {
-  font-weight: 500;
-  font-size: 16px;
+.product-info input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .product-price {
